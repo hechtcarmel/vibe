@@ -9,7 +9,7 @@ import { toast } from 'sonner'
  * those events never fire and the HTML5 `File` objects carry no path we could transcribe, so a
  * browser drop only explains that the mock dialog (Browse) is the way in.
  */
-export function useDropTarget(onPaths: (paths: string[]) => void) {
+export function useDropTarget(onPaths: (paths: string[]) => void, enabled = true) {
 	const [dragging, setDragging] = useState(false)
 	const onPathsRef = useRef(onPaths)
 	const browserDepth = useRef(0)
@@ -19,6 +19,11 @@ export function useDropTarget(onPaths: (paths: string[]) => void) {
 	}, [onPaths])
 
 	useEffect(() => {
+		if (!enabled) {
+			browserDepth.current = 0
+			setDragging(false)
+			return
+		}
 		const unlisteners: Promise<UnlistenFn>[] = []
 		unlisteners.push(listen('tauri://drag-enter', () => setDragging(true)))
 		unlisteners.push(listen('tauri://drag-leave', () => setDragging(false)))
@@ -65,7 +70,7 @@ export function useDropTarget(onPaths: (paths: string[]) => void) {
 			window.removeEventListener('dragleave', onDragLeave)
 			window.removeEventListener('drop', onDrop)
 		}
-	}, [])
+	}, [enabled])
 
 	return dragging
 }

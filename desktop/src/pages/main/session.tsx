@@ -3,7 +3,7 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import { webviewWindow } from '@tauri-apps/api'
 import * as dialog from '@tauri-apps/plugin-dialog'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { m } from '~/paraglide/messages.js'
 import * as config from '~/lib/config'
@@ -58,6 +58,8 @@ const mediaExtensions = [...config.audioExtensions, ...config.videoExtensions]
 
 export function SessionProvider({ children }: { children: ReactNode }) {
 	const navigate = useNavigate()
+	const location = useLocation()
+	const mainInitialized = useRef(false)
 	const preference = usePreferenceProvider()
 	const recordingShortcut = useRecordingShortcut()
 	const { setState: setErrorModal } = useContext(ErrorModalContext)
@@ -117,6 +119,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 			},
 			[enqueuePaths],
 		),
+		location.pathname === '/',
 	)
 
 	/** Downloaded files remain explicitly URL-sourced after they land on disk. */
@@ -135,9 +138,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 	const link = useAudioDownload(transcribeDownloads)
 
 	useEffect(() => {
-		recordingShortcut.setNormalRecordingActive(recording.isRecording)
+		recordingShortcut.setNormalRecordingActive(manualRecording.isRecording, manualRecording.isStarting)
 		return () => recordingShortcut.setNormalRecordingActive(false)
-	}, [recording.isRecording, recordingShortcut.setNormalRecordingActive])
+	}, [manualRecording.isRecording, manualRecording.isStarting, recordingShortcut.setNormalRecordingActive])
 
 	useEffect(() => {
 		if (recordingShortcut.isShortcutRecording) setPanel('record')
@@ -244,6 +247,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
 	// Same guards the old home page ran on mount.
 	useEffect(() => {
+		if (location.pathname !== '/' || mainInitialized.current) return
+		mainInitialized.current = true
 		async function checkIfCrashedRecently() {
 			try {
 				if (await invoke<boolean>('is_crashed_recently')) {
@@ -301,7 +306,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 		void checkIfCrashedRecently()
 		void checkModelExists()
 		void showWindow()
-	}, [])
+	}, [location.pathname])
 
 	// Results persist the moment they exist, so closing only warns when something would
 	// actually be lost: a run in flight, or finished results that never reached disk

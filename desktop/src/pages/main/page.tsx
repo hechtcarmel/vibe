@@ -6,7 +6,7 @@ import IdleHero from './components/idle-hero'
 import PlayerBar from './components/player-bar'
 import RecentsSidebar from './components/recents-sidebar'
 import SessionView from './components/session-view'
-import { SessionProvider, useSession } from './session'
+import { useSession } from './session'
 
 /** Collapsed = hidden entirely; the state lives in localStorage so it survives a reload. */
 function useSidebarVisible() {
@@ -140,9 +140,5 @@ function Shell() {
 }
 
 export default function MainPage() {
-	return (
-		<SessionProvider>
-			<Shell />
-		</SessionProvider>
-	)
+	return <Shell />
 }

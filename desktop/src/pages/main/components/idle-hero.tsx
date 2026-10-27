@@ -139,7 +139,7 @@ function RecordPanel() {
 			</div>
 			<Button
 				onClick={() => recording.startRecord()}
-				disabled={!preference.modelPath || (!recording.inputDevice && !recording.outputDevice)}
+				disabled={recording.isStarting || !preference.modelPath || (!recording.inputDevice && !recording.outputDevice)}
 				className="h-10 w-full rounded-xl disabled:opacity-40">
 				<Mic className="h-4 w-4" />
 				{m.startRecord()}

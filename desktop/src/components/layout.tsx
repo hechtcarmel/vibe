@@ -1,4 +1,4 @@
-import { PanelLeft } from 'lucide-react'
+import { PanelLeft, Square } from 'lucide-react'
 import { platform } from '@tauri-apps/plugin-os'
 import { ReactNode, useContext, useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
@@ -8,6 +8,7 @@ import { Button } from '~/components/ui/button'
 import { cn } from '~/lib/style'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { UpdaterContext } from '~/providers/updater'
+import { useRecordingShortcut } from '~/providers/recording-shortcut'
 import SettingsModal from './settings-modal'
 import PageTransition from './page-transition'
 import ModelDownloadPrompt from './model-download-prompt'
@@ -90,6 +91,7 @@ interface LayoutProps {
 }
 
 export default function Layout({ children, sidebar, bottomBar }: LayoutProps) {
+	const { isRecording, stopRecording } = useRecordingShortcut()
 	const [settingsVisible, setSettingsVisible] = useState(false)
 	const [settingsScrollTo, setSettingsScrollTo] = useState<string | undefined>(undefined)
 	// Only the main page renders a Recents sidebar, so only it gets the toggle.
@@ -132,7 +134,15 @@ export default function Layout({ children, sidebar, bottomBar }: LayoutProps) {
 			<div className="flex min-h-0 flex-1" style={{ direction: 'ltr' }}>
 				{sidebar}
 				<div className="flex min-h-0 min-w-0 flex-1 flex-col bg-background" style={{ direction: getTextDirection() }}>
-					<header data-tauri-drag-region className="flex h-14 shrink-0 items-center justify-end gap-4 pe-4"></header>
+					<header data-tauri-drag-region className="flex h-14 shrink-0 items-center justify-end gap-4 pe-4">
+						{isRecording && (
+							<Button variant="outline" onClick={() => void stopRecording()} className="gap-2 rounded-full border-red-500/40 text-red-600 dark:text-red-400">
+								<span aria-hidden className="h-2 w-2 rounded-full bg-red-500" />
+								<Square aria-hidden className="h-3 w-3 fill-current" />
+								{m.stopRecording()}
+							</Button>
+						)}
+					</header>
 					{/*
 					 * The main page owns its scrolling (transcript pane, file rail), so the shell must not
 					 * scroll too — otherwise the rails drift away under the reader. Other pages scroll here.

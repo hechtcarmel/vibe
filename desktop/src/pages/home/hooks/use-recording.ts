@@ -18,6 +18,7 @@ export function useRecording(onBeforeStart: () => void) {
 	const [inputDevice, setInputDevice] = useState<AudioDevice | null>(null)
 	const [outputDevice, setOutputDevice] = useState<AudioDevice | null>(null)
 	const [isRecording, setIsRecording] = useState(false)
+	const [isStarting, setIsStarting] = useState(false)
 	const [recordingName, setRecordingName] = useState('')
 
 	function setInputDeviceAndSave(value: SetStateAction<AudioDevice | null>) {
@@ -54,21 +55,25 @@ export function useRecording(onBeforeStart: () => void) {
 	}, [preference.homeTab])
 
 	async function startRecord() {
-		if (outputDevice && !(await ensureSystemAudioPermission())) return
-		startKeepAwake(KEEP_AWAKE.record)
-		onBeforeStart()
-		setIsRecording(true)
-		const selectedDevices = [inputDevice, outputDevice].filter((device): device is AudioDevice => device !== null)
+		if (isStarting || isRecording) return
+		setIsStarting(true)
 		try {
+			if (outputDevice && !(await ensureSystemAudioPermission())) return
+			startKeepAwake(KEEP_AWAKE.record)
+			onBeforeStart()
+			const selectedDevices = [inputDevice, outputDevice].filter((device): device is AudioDevice => device !== null)
 			await invoke('start_record', {
 				devices: selectedDevices,
 				recordingName: recordingName.trim() || null,
 			})
+			setIsRecording(true)
 		} catch (error) {
 			stopKeepAwake(KEEP_AWAKE.record)
 			setIsRecording(false)
 			console.error('startRecord error: ', error)
 			setErrorModal?.({ log: String(error), open: true })
+		} finally {
+			setIsStarting(false)
 		}
 	}
 
@@ -89,6 +94,7 @@ export function useRecording(onBeforeStart: () => void) {
 		inputDevice,
 		outputDevice,
 		isRecording,
+		isStarting,
 		setIsRecording,
 		recordingName,
 		setRecordingName,
